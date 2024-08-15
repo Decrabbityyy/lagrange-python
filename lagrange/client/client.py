@@ -378,7 +378,9 @@ class Client(BaseClient):
             next = GetFriendListRsp.decode(
                 (
                     await self.send_oidb_svc(
-                        0xFD4, 1, PBGetFriendListRequest().encode()
+                        0xFD4,
+                        1,
+                        PBGetFriendListRequest(next_uin=nextuin_cache.pop()).encode(),
                     )
                 ).data
             )
@@ -397,7 +399,7 @@ class Client(BaseClient):
                         )
                     )
             if next.next:
-                nextuin_cache.append(next)
+                nextuin_cache.append(next.next)
 
         return rsp
 
