@@ -211,6 +211,10 @@ class Client(BaseClient):
         packet = await self.send_uni_packet("MessageSvc.PbSendMsg", proto_encode(body))
         return SendMsgRsp.decode(packet.data)
 
+    async def _send_msg_fake(self, pb: dict, *, grp_id=0, uid=""):
+        # working
+        pass
+
     async def send_grp_msg(self, msg_chain: List[Element], grp_id: int) -> int:
         result = await self._send_msg_raw(
             {1: build_message(msg_chain).encode()}, grp_id=grp_id
