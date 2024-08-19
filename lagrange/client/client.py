@@ -66,7 +66,7 @@ from .event import Events
 from .events.group import GroupMessage
 from .events.service import ClientOnline, ClientOffline
 from .highway import HighWaySession
-from .message.decoder import parse_grp_msg
+from .message.decoder import parse_grp_msg, parse_msg_new
 from .message.elems import Audio, Image
 from .message.encoder import build_message
 from .message.types import Element
@@ -595,7 +595,11 @@ class Client(BaseClient):
         else:
             return [UserInfo.from_pb(body) for body in rsp.body]
 
-    async def get_forward_msg(self, res_id: str):
+    async def get_forward_msg(self, res_id: str) -> List[List[Element]]:
+        """
+        res_id: from MultiMsg
+        """
+        ret: List[List[Element]] = []
         rsp = RecvLongMsgRsp.decode(
             (
                 await self.send_uni_packet(
@@ -606,5 +610,13 @@ class Client(BaseClient):
         )
         payload = gzip.decompress(rsp.result.payload)
         awa = LongMsgResult.decode(payload)
-        print(payload.hex())
-        # parse_msg_new(awa.action.action_data.msg_body)
+        if isinstance(awa.action, list):
+            for msg in awa.action:
+                for elem in msg.action_data.msg_body:
+                    ret.append(list(await parse_msg_new(self, elem)))
+                    # 对，但是不是很对的解析
+                    # 顺序对了，但是顺序不对
+        else:
+            for elem in awa.action.action_data.msg_body:
+                ret.append(list(await parse_msg_new(self, elem)))
+        return ret

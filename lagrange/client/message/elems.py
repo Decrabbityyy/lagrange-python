@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Optional
 
 from lagrange.client.events.group import GroupMessage
 from lagrange.info.serialize import JsonSerializer
@@ -146,6 +146,6 @@ class MarketFace(Text):
 
 @dataclass
 class MultiMsg(Text):
-    content: list[Union[BaseElem, MediaInfo]]
-    res_id: Optional[str] = None
-    group_uin: Optional[int] = None
+    # content: list[Union[BaseElem, MediaInfo]]
+    res_id: str
+    from_group_uin: Optional[int] = None

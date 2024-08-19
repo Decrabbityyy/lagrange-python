@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from lagrange.utils.binary.protobuf import proto_field, ProtoStruct
 from .rich_text import RichText
 from .msg_push import MsgPushBody
@@ -74,12 +74,12 @@ class LongMsgContent(ProtoStruct):
 
 
 class LongMsgAction(ProtoStruct):
-    action_command: str = proto_field(1)
+    action_command: str = proto_field(1)  # 也可能是uniseq
     action_data: LongMsgContent = proto_field(2)
 
 
 class LongMsgResult(ProtoStruct):
-    action: LongMsgAction = proto_field(2)
+    action: Union[list[LongMsgAction], LongMsgAction] = proto_field(2)
 
 
 class LongMsgSettings(ProtoStruct):

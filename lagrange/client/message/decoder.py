@@ -1,6 +1,6 @@
 import zlib
 from typing import List, Tuple, Sequence, TYPE_CHECKING, cast, Literal
-
+import xml.dom.minidom as minidom
 from lagrange.client.events.group import GroupMessage
 from lagrange.client.events.friend import FriendMessage
 from lagrange.pb.message.msg_push import MsgPushBody
@@ -144,15 +144,21 @@ async def parse_msg_new(client: "Client", pkg: MsgPushBody) -> Sequence[Element]
                 index = extra.body[0].index
                 uid = client.uid
                 gid = pkg.response_head.rsp_grp.gid if common.bus_type == 20 else None
-                url = await client.fetch_image_url(bus_type=cast(Literal[10, 20], common.bus_type),
-                                                   node=index, uid=uid, gid=gid)
+                url = await client.fetch_image_url(
+                    bus_type=cast(Literal[10, 20], common.bus_type),
+                    node=index,
+                    uid=uid,
+                    gid=gid,
+                )
                 msg_chain.append(
                     elems.Image(
                         name=index.info.name,
                         size=index.info.size,
                         id=0,
                         md5=bytes.fromhex(index.info.hash),
-                        text=extra.biz_info.pic.summary if extra.biz_info.pic.summary else "[图片]",
+                        text=extra.biz_info.pic.summary
+                        if extra.biz_info.pic.summary
+                        else "[图片]",
                         width=index.info.width,
                         height=index.info.height,
                         url=url,
@@ -169,9 +175,20 @@ async def parse_msg_new(client: "Client", pkg: MsgPushBody) -> Sequence[Element]
                     content = zlib.decompress(jr[1:])
                 else:
                     content = jr[1:]
-                msg_chain.append(
-                    elems.Service(id=sid, raw=content, text=f"[service:{sid}]")
-                )
+                if sid == 35:
+                    # msg_chain.append(elems.MultiMsg(res_id=service))
+                    root: minidom.Document = minidom.parseString(content)
+                    msg_elem: minidom.Element = root.getElementsByTagName("msg")[0]
+                    return [
+                        elems.MultiMsg(
+                            msg_elem.getAttribute("brief"),
+                            res_id=msg_elem.getAttribute("m_resid"),
+                        )
+                    ]
+                else:
+                    msg_chain.append(
+                        elems.Service(id=sid, raw=content, text=f"[service:{sid}]")
+                    )
             ignore_next = True
         # elif 16 in raw:  # extra
         #     # nickname = unpack_dict(raw, "16.2", "")
