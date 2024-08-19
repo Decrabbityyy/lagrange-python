@@ -1,6 +1,7 @@
 from typing import Union, TYPE_CHECKING
 from typing_extensions import TypeAlias
 
+
 if TYPE_CHECKING:
     from .elems import (
         Text,
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
         Audio,
         Poke,
         MarketFace,
+        MultiMsg,
     )
 
 # T = TypeVar(
@@ -42,4 +44,5 @@ Element: TypeAlias = Union[
     "Audio",
     "Poke",
     "MarketFace",
+    "MultiMsg",
 ]

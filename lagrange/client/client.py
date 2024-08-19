@@ -1,3 +1,4 @@
+import gzip
 import os
 import struct
 import asyncio
@@ -14,6 +15,11 @@ from typing import (
 )
 
 from lagrange.info import AppInfo, DeviceInfo, SigInfo
+from lagrange.pb.message.longmsg import (
+    LongMsgResult,
+    RecvLongMsgReq,
+    RecvLongMsgRsp,
+)
 from lagrange.pb.message.msg_push import MsgPushBody
 from lagrange.pb.message.send import SendMsgRsp
 from lagrange.pb.service.comm import SendNudge
@@ -211,9 +217,34 @@ class Client(BaseClient):
         packet = await self.send_uni_packet("MessageSvc.PbSendMsg", proto_encode(body))
         return SendMsgRsp.decode(packet.data)
 
+    async def get_rkey(self):
+        body = {
+            1: {1: {1: 1, 2: 202}, 2: {101: 2, 102: 1, 200: 0}, 3: {1: 2}},
+            4: {1: [10, 20, 2]},
+        }
+        rsp = await self.send_oidb_svc(0x9067, 202, proto_encode(body), True)
+
     async def _send_msg_fake(self, pb: dict, *, grp_id=0, uid=""):
         # working
         pass
+
+    # async def send_fake_msg(self, multi_msg: MultiMsg, grp_id: int):
+    #     PushMsgBody(
+    #         response_head=ResponseHead(
+    #             from_uin=self.uin,
+    #             from_uid=self.uid,
+    #             to_uid=None if grp_id else self.uid,
+    #             grp=None if not grp_id else ResponseGrp(groupUin=grp_id),
+    #             forward=None
+    #             if grp_id
+    #             else ResponseForward(friend_name=multi_msg.sender_name),
+    #         ),
+    #         content_head=ContentHead(
+    #             type=82 if grp_id else 9,
+    #             sub_type=None if grp_id else 4,
+    #             div_seq=None if grp_id else 4,
+    #         ),
+    #     )
 
     async def send_grp_msg(self, msg_chain: List[Element], grp_id: int) -> int:
         result = await self._send_msg_raw(
@@ -563,3 +594,17 @@ class Client(BaseClient):
             return UserInfo.from_pb(rsp.body[0])
         else:
             return [UserInfo.from_pb(body) for body in rsp.body]
+
+    async def get_forward_msg(self, res_id: str):
+        rsp = RecvLongMsgRsp.decode(
+            (
+                await self.send_uni_packet(
+                    "trpc.group.long_msg_interface.MsgService.SsoRecvLongMsg",
+                    RecvLongMsgReq.build(self.uid, res_id).encode(),
+                )
+            ).data
+        )
+        payload = gzip.decompress(rsp.result.payload)
+        awa = LongMsgResult.decode(payload)
+        print(payload.hex())
+        # parse_msg_new(awa.action.action_data.msg_body)

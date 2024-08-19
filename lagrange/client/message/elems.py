@@ -1,6 +1,6 @@
 import json
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Union
 
 from lagrange.client.events.group import GroupMessage
 from lagrange.info.serialize import JsonSerializer
@@ -142,3 +142,10 @@ class MarketFace(Text):
     def url(self) -> str:
         pic_id = self.face_id.hex()
         return f"https://i.gtimg.cn/club/item/parcel/item/{pic_id[:2]}/{pic_id}/{self.width}x{self.height}.png"
+
+
+@dataclass
+class MultiMsg(Text):
+    content: list[Union[BaseElem, MediaInfo]]
+    res_id: Optional[str] = None
+    group_uin: Optional[int] = None
