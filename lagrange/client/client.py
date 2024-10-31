@@ -611,6 +611,12 @@ class Client(BaseClient):
         temp = proto_decode(rsp.data).into((4, 1), dict[int, list[bytes]])
         return temp[0][1].decode(), temp[1][1].decode()
 
+    async def create_group_voice_room(self, grp_id: int):
+        await self.send_uni_packet(
+            "trpc.qqrtc.mav_appsvr.MavAppsvr.SsoCreateRoom",
+            ReqCreateVioceRoom.build(grp_id, self.uid).encode(),
+        )
+
     async def get_what_list(self):
         body = {1: 1, 3: 6, 4: self.uid, 5: 0, 6: 80, 8: 2, 9: 0, 12: 1, 22: 1}
         a = await self.send_oidb_svc(0x5CF, 11, proto_encode(body))
