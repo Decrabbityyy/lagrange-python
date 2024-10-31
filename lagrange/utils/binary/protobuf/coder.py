@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Union, TypeVar, TYPE_CHECKING, cast
 from collections.abc import Mapping, Sequence
 from typing_extensions import Self, TypeAlias
@@ -5,7 +6,7 @@ from typing_extensions import Self, TypeAlias
 from lagrange.utils.binary.builder import Builder
 from lagrange.utils.binary.reader import Reader
 
-Proto: TypeAlias = dict[int, "ProtoEncodable"]
+Proto: TypeAlias = dict[Union[int, str], "ProtoEncodable"]
 LengthDelimited: TypeAlias = Union[str, "Proto", bytes]
 ProtoEncodable: TypeAlias = Union[
     int,
@@ -32,7 +33,27 @@ class ProtoDecoded:
             data = self.proto
             for f in field:
                 data = data[f]  # type: ignore
-            return data # type: ignore
+            return data  # type: ignore
+
+    def show(self):
+        return _show(self.proto)
+
+
+def _show(raw_pb: Proto):
+    pb = copy(raw_pb)
+    for k, v in pb.items():
+        if isinstance(v, bytes):
+            try:
+                pb[k] = v.decode("utf-8")
+            except UnicodeDecodeError:
+                continue
+        elif isinstance(v, list):
+            pb[k] = [_show(i) for i in v]
+        elif isinstance(v, dict):
+            pb[k] = _show(v)
+        else:
+            pass
+    return pb
 
 
 class ProtoBuilder(Builder):
@@ -84,7 +105,7 @@ class ProtoReader(Reader):
         return data
 
 
-def _encode(builder: ProtoBuilder, tag: int, value: ProtoEncodable):
+def _encode(builder: ProtoBuilder, tag: Union[int, str], value: ProtoEncodable):
     if value is None:
         return
 
