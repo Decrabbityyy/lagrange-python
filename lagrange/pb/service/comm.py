@@ -36,3 +36,6 @@ class GetClientKeyRsp(ProtoStruct):
     f2: int = proto_field(2)
     client_key: str = proto_field(3)
     expiration: int = proto_field(4)
+
+
+# class QwQa(ProtoStruct):

@@ -34,7 +34,7 @@ from lagrange.pb.service.group import (
     GetGrpMsgRsp,
     PBFetchGroupRequest,
     PBGetGrpMsgRequest,
-    PBGroupMuteRequest,
+    PBGroupStateRequest,
     PBGroupRecallRequest,
     PBGroupRenameRequest,
     PBHandleGroupRequest,
@@ -49,6 +49,7 @@ from lagrange.pb.service.group import (
     GetGrpListResponse,
     PBGetGrpMemberInfoReq,
     GetGrpMemberInfoRsp,
+    ReqCreateVioceRoom,
     SetEssenceRsp,
     GetInfoFromUidRsp,
     PBGetInfoFromUidReq,
@@ -453,7 +454,7 @@ class Client(BaseClient):
         rsp = await self.send_oidb_svc(
             0x89A,
             0,
-            PBGroupMuteRequest.build(grp_id, 0xFFFFFFFF if enable else 0).encode(),
+            PBGroupStateRequest.mute_grp(grp_id, 0xFFFFFFFF if enable else 0).encode(),
         )
         if rsp.ret_code:
             raise AssertionError(rsp.ret_code, rsp.err_msg)
@@ -493,17 +494,13 @@ class Client(BaseClient):
             raise AssertionError(rsp.ret_code, rsp.err_msg)
 
     @overload
-    async def get_user_info(self, uid_or_uin: Union[str, int], /) -> UserInfo:
-        ...
+    async def get_user_info(self, uid_or_uin: Union[str, int], /) -> UserInfo: ...
 
     @overload
-    async def get_user_info(self, uid_or_uin: Union[list[str], list[int]], /) -> list[UserInfo]:
-        ...
+    async def get_user_info(self, uid_or_uin: Union[list[str], list[int]], /) -> list[UserInfo]: ...
 
     async def get_user_info(
-        self,
-        uid_or_uin: Union[str, int, list[str], list[int]],
-        /
+        self, uid_or_uin: Union[str, int, list[str], list[int]], /
     ) -> Union[UserInfo, list[UserInfo]]:
         if isinstance(uid_or_uin, list):
             assert uid_or_uin, "empty uid or uin"
@@ -613,3 +610,22 @@ class Client(BaseClient):
         rsp = await self.send_oidb_svc(0x9067, 202, proto_encode(body), True)
         temp = proto_decode(rsp.data).into((4, 1), dict[int, list[bytes]])
         return temp[0][1].decode(), temp[1][1].decode()
+
+    async def get_what_list(self):
+        body = {1: 1, 3: 6, 4: self.uid, 5: 0, 6: 80, 8: 2, 9: 0, 12: 1, 22: 1}
+        a = await self.send_oidb_svc(0x5CF, 11, proto_encode(body))
+        print(a.data.hex())
+
+    async def set_bot_like(self, bot_uid: str):
+        body = {
+            1: bot_uid,
+            2: {1: 0, 2: 0, 3: 0},
+            3: {1: 2},
+            4: 0,  # checked
+            5: {},
+            6: 2,
+        }
+        # body = {1: bot_uid, 2: {1: 18, 2: 0, 3: 0}, 3: {1: 1}, 4: 1, 5: {}, 6: 2}
+        a = await self.send_oidb_svc(0x9116, 1, proto_encode(body))
+        print(a.ret_code, a.err_msg)
+        print(a.data.hex())

@@ -125,7 +125,7 @@ class GroupSub20Head(ProtoStruct):
 
 class GroupSub20Body(ProtoStruct):
     type: Optional[int] = proto_field(1, default=None)  # 12: nudge, 14: group_sign
-    f2: int = proto_field(2)  # 1061 ,  bot added group:19217
+    f2: int = proto_field(2)  # 1061 ,  bot added group:19217,remove reaction:19270
     # f3: int = proto_field(3)  # 7
     # f6: int = proto_field(6)  # 1132
     attrs: list[dict] = proto_field(7, default_factory=list)

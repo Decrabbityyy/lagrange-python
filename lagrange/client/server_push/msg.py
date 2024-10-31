@@ -131,7 +131,9 @@ async def msg_push_handler(client: "Client", sso: SSOPacket):
                 pb.info.random,
                 pb.info.time,
             )
-        if sub_typ == 368:
+        elif sub_typ == 38:  # 入群特效
+            pass
+        elif sub_typ == 368:
             pass
             # print(pkg.message.encode().hex())
         logger.debug(f"unhandled friend event / group file upload notice event: {pkg}")  # TODO: paste
@@ -170,6 +172,8 @@ async def msg_push_handler(client: "Client", sso: SSOPacket):
                         pass
                     else:
                         raise TypeError(f"Unhandled GrayTips with attribute: {attrs}")
+                if pb.body.type == 4:
+                    return
                 elif pb.body.type == 12:
                     return GroupNudge(
                         grp_id,

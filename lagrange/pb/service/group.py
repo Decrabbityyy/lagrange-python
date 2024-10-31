@@ -14,9 +14,7 @@ class PBGetGrpMsgRequest(ProtoStruct):
     direction: bool = proto_field(2, default=True)
 
     @classmethod
-    def build(
-        cls, grp_id: int, start_seq: int, end_seq: int, direction=True
-    ) -> "PBGetGrpMsgRequest":
+    def build(cls, grp_id: int, start_seq: int, end_seq: int, direction=True) -> "PBGetGrpMsgRequest":
         return cls(
             body=GetGrpMsgReqBody(grp_id=grp_id, start_seq=start_seq, end_seq=end_seq),
             direction=direction,
@@ -64,9 +62,7 @@ class PBRenameMemberRequest(ProtoStruct):
 
     @classmethod
     def build(cls, grp_id: int, target_uid: str, name: str) -> "PBRenameMemberRequest":
-        return cls(
-            grp_id=grp_id, rename_f3=RenameMemberRequestF3(uid=target_uid, name=name)
-        )
+        return cls(grp_id=grp_id, rename_f3=RenameMemberRequestF3(uid=target_uid, name=name))
 
 
 class PBLeaveGroupRequest(ProtoStruct):
@@ -99,17 +95,26 @@ class SetEssenceRsp(ProtoStruct):
     code: int = proto_field(10)
 
 
-class GroupMuteBody(ProtoStruct):
-    duration: int = proto_field(17)
+class GroupStateBody(ProtoStruct):
+    auth_type: Optional[int] = proto_field(
+        16, default=None
+    )  # 1 allow anyone, 2 send auth message, 3 nobody could, 4 only true answer, 5 by answer and admin
+    duration: Optional[int] = proto_field(17, default=None)
+    """mute duration in seconds"""
+    question: Optional[str] = proto_field(30, default=None)  # auth type is 4 and 5
+    answer: Optional[str] = proto_field(31, default=None)
+    # search way
+    ban_keyword: Optional[bool] = proto_field(35, default=None)
+    ban_groupid: Optional[bool] = proto_field(36, default=None)
 
 
-class PBGroupMuteRequest(ProtoStruct):
+class PBGroupStateRequest(ProtoStruct):
     grp_id: int = proto_field(1)
-    body: GroupMuteBody = proto_field(2)
+    body: GroupStateBody = proto_field(2)
 
     @classmethod
-    def build(cls, grp_id: int, duration: int) -> "PBGroupMuteRequest":
-        return cls(grp_id=grp_id, body=GroupMuteBody(duration=duration))
+    def mute_grp(cls, grp_id: int, duration: int) -> "PBGroupStateRequest":
+        return cls(grp_id=grp_id, body=GroupStateBody(duration=duration))
 
 
 class PBFetchGroupRequest(ProtoStruct):
@@ -155,14 +160,10 @@ class PBHandleGroupRequest(ProtoStruct):
     body: HandleGrpReqBody = proto_field(2)
 
     @classmethod
-    def build(
-        cls, action: int, seq: int, event_type: int, grp_id: int, message: str
-    ) -> "PBHandleGroupRequest":
+    def build(cls, action: int, seq: int, event_type: int, grp_id: int, message: str) -> "PBHandleGroupRequest":
         return cls(
             action=action,
-            body=HandleGrpReqBody(
-                seq=seq, event_type=event_type, grp_id=grp_id, message=message
-            ),
+            body=HandleGrpReqBody(seq=seq, event_type=event_type, grp_id=grp_id, message=message),
         )
 
 
@@ -175,9 +176,7 @@ class PBSendGrpReactionReq(ProtoStruct):
     f7: int = proto_field(7, default=0)
 
     @classmethod
-    def build(
-        cls, grp_id: int, seq: int, content: Union[str, int]
-    ) -> "PBSendGrpReactionReq":
+    def build(cls, grp_id: int, seq: int, content: Union[str, int]) -> "PBSendGrpReactionReq":
         return cls(
             grp_id=grp_id,
             seq=seq,
@@ -198,9 +197,7 @@ class PBGroupMuteMemberRequest(ProtoStruct):
 
     @classmethod
     def build(cls, grp_id: int, uid: str, duration: int) -> "PBGroupMuteMemberRequest":
-        return cls(
-            grp_id=grp_id, body=GroupMuteMemberReqBody(uid=uid, duration=duration)
-        )
+        return cls(grp_id=grp_id, body=GroupMuteMemberReqBody(uid=uid, duration=duration))
 
 
 # class PBGroupKickMemberRequest(ProtoStruct):
@@ -231,12 +228,8 @@ class PBGroupKickMemberRequest(ProtoStruct):
     body: GroupKickMemberReqBody = proto_field(2)
 
     @classmethod
-    def build(
-        cls, grp_id: int, uin: int, permanent: bool
-    ) -> "PBGroupKickMemberRequest":
-        return cls(
-            grp_id=grp_id, body=GroupKickMemberReqBody(uin=uin, permanent=permanent)
-        )
+    def build(cls, grp_id: int, uin: int, permanent: bool) -> "PBGroupKickMemberRequest":
+        return cls(grp_id=grp_id, body=GroupKickMemberReqBody(uin=uin, permanent=permanent))
 
 
 # # group_member_card.get_group_member_card_info
@@ -287,9 +280,7 @@ class PBGetGrpMemberInfoReq(ProtoStruct):
     next_key: Optional[bytes] = proto_field(15, default=None)  # base64(pb)
 
     @classmethod
-    def build(
-        cls, grp_id: int, uid="", next_key: Optional[str] = None
-    ) -> "PBGetGrpMemberInfoReq":
+    def build(cls, grp_id: int, uid="", next_key: Optional[str] = None) -> "PBGetGrpMemberInfoReq":
         assert not (uid and next_key), "invalid arguments"
         if uid:
             account = AccountInfo(uid=uid)
@@ -408,6 +399,7 @@ class _GetInfoCfg(ProtoStruct):
         ),
     )
 
+
 class PBGetInfoFromUidReq(_GetInfoCfg):
     uid: list[str] = proto_field(1)
 
@@ -473,3 +465,39 @@ class GetGrpLastSeqRspBody(ProtoStruct):
 
 class GetGrpLastSeqRsp(ProtoStruct):
     body: GetGrpLastSeqRspBody = proto_field(1)
+
+
+class ReqCreateVioceRoom(ProtoStruct):
+    cfg1: "CreateVioceRoomCfg1" = proto_field(1)
+    f2: int = proto_field(2)
+    f3: int = proto_field(3)
+    f4: int = proto_field(4)
+    f5: int = proto_field(5)
+    cfg2: "CreateVioceRoomCfg2" = proto_field(8)
+    f9: int = proto_field(9)
+
+    @classmethod
+    def build(cls, group_id: int, self_uid: str) -> "ReqCreateVioceRoom":
+        return cls(
+            cfg1=CreateVioceRoomCfg1(f1=4, f2=0, creater_uid=self_uid),
+            f2=3,
+            f3=10042,
+            f4=2,
+            f5=3,
+            cfg2=CreateVioceRoomCfg2(f2=0, f3=10, f4=1, group_id=group_id, f8=1),
+            f9=1,
+        )
+
+
+class CreateVioceRoomCfg1(ProtoStruct):
+    f1: int = proto_field(1)
+    f2: int = proto_field(2)
+    creater_uid: str = proto_field(4)
+
+
+class CreateVioceRoomCfg2(ProtoStruct):
+    f2: int = proto_field(2)
+    f3: int = proto_field(3)
+    f4: int = proto_field(4)
+    group_id: int = proto_field(7)
+    f8: int = proto_field(8)
